@@ -41,7 +41,7 @@ def _merge(alpha, theta_0, theta_1, fishers, fisher_floor):
 
 
 def wise_ft(args):
-    assert args.save is not None, 'Please provide a path to store models'
+    # assert args.save is not None, 'Please provide a path to store models'
     
     if args.load is None:
         # Build and save zero-shot model
@@ -89,7 +89,8 @@ def wise_ft(args):
         finetuned.load_state_dict(theta)
 
         # save model
-        finetuned.save(os.path.join(args.save, f'wise_ft_alpha={alpha:.3f}.pt'))
+        if args.save:
+            finetuned.save(os.path.join(args.save, f'wise_ft_alpha={alpha:.3f}.pt'))
 
         # evaluate
         evaluate(finetuned, args)
