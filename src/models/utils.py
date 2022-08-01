@@ -41,13 +41,15 @@ def accuracy(output, target, topk=(1,)):
 def torch_save(classifier, save_path):
     if os.path.dirname(save_path) != '':
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    with open(save_path, 'wb') as f:
-        pickle.dump(classifier.cpu(), f)
+    # with open(save_path, 'wb') as f:
+    #     pickle.dump(classifier.cpu(), f)
+    torch.save(classifier.cpu(), save_path)
 
 
 def torch_load(save_path, device=None):
-    with open(save_path, 'rb') as f:
-        classifier = pickle.load(f)
+    # with open(save_path, 'rb') as f:
+    #    classifier = pickle.load(f)
+    classifier = torch.load(save_path, map_location='cpu')
     if device is not None:
         classifier = classifier.to(device)
     return classifier
