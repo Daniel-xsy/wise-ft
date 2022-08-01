@@ -8,4 +8,4 @@ class ImageNetSketch(ImageNet):
         pass
 
     def get_test_path(self):
-        return os.path.join(self.location, 'sketch')
+        return os.path.join(self.location, 'imagenet-sketch')
