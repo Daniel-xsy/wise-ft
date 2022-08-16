@@ -57,7 +57,7 @@ def plot(results_db, eval_dataset, save_path):
     x_range = (0.95 * min(df[x]), 1.05 * max(df[x]))
     y_range = (0.95 * min(df[y]), 1.05 * max(df[y]))
 
-    transform = adjust_plot(ax, x_range, y_range, scaling='logit')
+    transform = adjust_plot(ax, x_range, y_range, scaling=None)
 
     # Add zero-shot
     ax.scatter(
