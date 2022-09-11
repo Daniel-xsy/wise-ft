@@ -2,6 +2,7 @@ import os
 import json
 
 import torch
+import torchvision.transforms as tfs
 import numpy as np
 
 from src.models import utils
@@ -80,6 +81,23 @@ def eval_single_dataset(image_classifier, dataset, args):
 def evaluate(image_classifier, args):
     if args.eval_datasets is None:
         return
+
+    # # change input size
+    # image_classifier.val_preprocess = tfs.Compose([
+    #     tfs.Resize(args.input_size),
+    #     tfs.CenterCrop(args.input_size),
+    #     tfs.ToTensor(),
+    #     tfs.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+    # ])
+
+    # positional embedding interpolation
+    patch_size = utils.get_patch_size(image_classifier)
+    orig_size = int((utils.get_pos_embed_size(image_classifier) - 1)**0.5)
+    new_size = int(args.input_size / patch_size)
+    if not orig_size == new_size:
+        print('Position Embedding interpolate from %ix%i to %ix%i' % (orig_size, orig_size, new_size, new_size))
+        image_classifier = utils.interpolate_pos_embed(image_classifier, orig_size, new_size)
+
     info = vars(args)
     for i, dataset_name in enumerate(args.eval_datasets):
         print('Evaluating on', dataset_name)

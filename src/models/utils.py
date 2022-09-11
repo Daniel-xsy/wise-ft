@@ -1,6 +1,9 @@
 import os
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 import pickle
 from tqdm import tqdm
 import math
@@ -100,3 +103,25 @@ class LabelSmoothing(torch.nn.Module):
         smooth_loss = -logprobs.mean(dim=-1)
         loss = self.confidence * nll_loss + self.smoothing * smooth_loss
         return loss.mean()
+
+
+def interpolate_pos_embed(model, orig_size, new_size):
+    pos_emb = model.image_encoder.model.visual.positional_embedding
+    # cls token
+    extra_tokens = pos_emb[None, 0]
+    pos_tokens = pos_emb[1:]
+    pos_tokens = pos_tokens.reshape(1, orig_size, orig_size, -1).permute(0, 3, 1, 2)
+    pos_tokens = F.interpolate(pos_tokens, size=(new_size, new_size), mode='bicubic', align_corners=False)
+    pos_tokens = pos_tokens.permute(0, 2, 3, 1).flatten(0, 2)
+    new_pos_embed = torch.cat((extra_tokens, pos_tokens), dim=0)
+    model.image_encoder.model.visual.positional_embedding = nn.Parameter(new_pos_embed)
+
+    return model
+
+
+def get_pos_embed_size(model):
+    return model.image_encoder.model.visual.positional_embedding.size(0)
+
+
+def get_patch_size(model):
+    return model.image_encoder.model.visual.patch_size

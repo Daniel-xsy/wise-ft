@@ -72,8 +72,15 @@ class ImageClassifier(torch.nn.Module):
     def forward(self, inputs):
         if self.process_images:
             inputs = self.image_encoder(inputs)
+        dist_token = None
+        if isinstance(inputs, tuple):
+            inputs, dist_token = inputs[0], inputs[1]
+
         outputs = self.classification_head(inputs)
-        return outputs
+        if dist_token:
+            return (outputs + dist_token) / 2
+        else:
+            return outputs
 
     def save(self, filename):
         print(f'Saving image classifier to {filename}')

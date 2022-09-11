@@ -216,19 +216,31 @@ class VisualTransformer(nn.Module):
 
         scale = width ** -0.5
         self.class_embedding = nn.Parameter(scale * torch.randn(width))
-        self.positional_embedding = nn.Parameter(scale * torch.randn((input_resolution // patch_size) ** 2 + 1, width))
+        self.dist_token = nn.Parameter(torch.zeros(width))
+        self.positional_embedding = nn.Parameter(scale * torch.randn((input_resolution // patch_size) ** 2 + 2, width))
         self.ln_pre = LayerNorm(width)
 
         self.transformer = Transformer(width, layers, heads)
 
         self.ln_post = LayerNorm(width)
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
+        self.proj_dist = nn.Parameter(scale * torch.randn(width, 1000))
 
     def forward(self, x: torch.Tensor):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
-        x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
+        try:
+            is_dist_token = True
+            x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), 
+                        self.dist_token.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device),                
+                        x], 
+                        dim=1)  # shape = [*, grid ** 2 + 1, width]
+        except:
+            is_dist_token = False
+            x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device),                
+                        x], 
+                        dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
         x = self.ln_pre(x)
 
@@ -236,12 +248,21 @@ class VisualTransformer(nn.Module):
         x = self.transformer(x)
         x = x.permute(1, 0, 2)  # LND -> NLD
 
-        x = self.ln_post(x[:, 0, :])
+        if is_dist_token:
+            x = self.ln_post(x[:, 0 : 2, :])
+            x, dist_token = x[:, 0, :], x[:, 1, :]  
+        else:
+            x = self.ln_post(x[:, 0, :])
 
         if self.proj is not None:
             x = x @ self.proj
 
-        return x
+        if not is_dist_token:
+            return x
+        else:
+            if self.proj_dist is not None:
+                dist_token = dist_token @ self.proj_dist
+            return x, dist_token
 
 
 class CLIP(nn.Module):

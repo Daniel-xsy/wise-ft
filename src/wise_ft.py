@@ -64,6 +64,8 @@ def wise_ft(args):
     # Load models
     zeroshot = ImageClassifier.load(zeroshot_checkpoint)
     finetuned = ImageClassifier.load(finetuned_checkpoint)
+    checkpoint = torch.load(args.checkpoint)
+    finetuned.load_state_dict(checkpoint['state_dict'])
     theta_0 = {k: v.clone() for k, v in zeroshot.state_dict().items()}
     theta_1 = {k: v.clone() for k, v in finetuned.state_dict().items()}
     del zeroshot
@@ -92,6 +94,7 @@ def wise_ft(args):
         if args.save:
             finetuned.save(os.path.join(args.save, f'wise_ft_alpha={alpha:.3f}.pt'))
 
+        finetuned.classification_head.normalize = False
         # evaluate
         evaluate(finetuned, args)
 

@@ -53,6 +53,11 @@ def finetune(args):
     model = torch.nn.DataParallel(model, device_ids=devices)
     model.train()
 
+    # Only evaluate
+    if args.eval:
+        eval_results = evaluate(image_classifier, args)
+        exit(0)
+
     if args.ls > 0:
         loss_fn = LabelSmoothing(args.ls)
     else:

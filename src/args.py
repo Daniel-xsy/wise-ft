@@ -68,6 +68,12 @@ def parse_arguments():
         help="The type of model (e.g. RN50, ViT-B/32).",
     )
     parser.add_argument(
+        "--input-size",
+        type=int,
+        default=224,
+        help="Input image size",
+    )
+    parser.add_argument(
         "--batch-size",
         type=int,
         default=128,
@@ -107,6 +113,12 @@ def parse_arguments():
         help="Optionally load _classifiers_, e.g. a zero shot classifier or probe or ensemble both.",
     )
     parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default=None,
+        help="TPU trained checkpoint to load from",
+    )
+    parser.add_argument(
         "--save",
         type=str,
         default=None,
@@ -135,6 +147,12 @@ def parse_arguments():
         type=float,
         default=1e-8,
         help="TODO",
+    )
+    parser.add_argument(
+        "--eval",
+        action='store_true',
+        default=False,
+        help="evaluate only",
     )
     parsed_args = parser.parse_args()
     parsed_args.device = "cuda" if torch.cuda.is_available() else "cpu"
